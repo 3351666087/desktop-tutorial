@@ -1,0 +1,22 @@
+{
+  "samples": 9764,
+  "span_min": 432.8,
+  "start_local": "2026-05-18 15:57:43",
+  "end_local": "2026-05-18 23:10:34",
+  "avg_temp_c": 28.3,
+  "min_temp_c": 24.4,
+  "max_temp_c": 52.7,
+  "fan_duty_pct": 31.5,
+  "occupancy_pct": 17.6,
+  "lamp_duty_pct": 17.3,
+  "safety_events": 5,
+  "adc_guard_pct": 62.8,
+  "modes": {
+    "ENERGY_SAVING": 5621,
+    "COOLING": 2994,
+    "LIGHTING": 1061,
+    "MANUAL": 82,
+    "SAFETY_ALARM": 5,
+    "NORMAL": 1
+  }
+}
