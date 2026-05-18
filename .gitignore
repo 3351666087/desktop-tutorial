@@ -1,0 +1,30 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+__pycache__/
+*.pyc
+
+# Node / generated dashboard state
+SmartClassroom_WebDashboard/node_modules/
+SmartClassroom_WebDashboard/data/
+SmartClassroom_WebDashboard/data/secrets.json
+SmartClassroom_WebDashboard/data/certs/
+SmartClassroom_WebDashboard/data/voice_uploads/
+SmartClassroom_WebDashboard/data/*.jsonl
+SmartClassroom_WebDashboard/dashboard.stdout.log
+SmartClassroom_WebDashboard/dashboard.stderr.log
+
+# Local Wi-Fi / broker credentials
+ESP32_3B_MQTT_Gateway/credentials.h
+
+# Arduino / generated output
+*.hex
+*.bin
+*.elf
+*.map
+
+# Generated presentation workspace scratch
+outputs/
+docs/pdf_preview/
+docs/presentation/artifact-build-manifest.json

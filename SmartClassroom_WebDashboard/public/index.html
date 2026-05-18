@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart Classroom Command Center</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-bg="aurora" data-accent="cyan">
+    <div class="scene" aria-hidden="true">
+      <canvas id="backdropCanvas" class="backdrop-canvas"></canvas>
+      <span class="glow glow-a"></span>
+      <span class="glow glow-b"></span>
+      <span class="gridwash"></span>
+    </div>
+
+    <main class="shell">
+      <header class="hero glass">
+        <div class="brand">
+          <span class="kicker" data-i18n="kicker">IoT 边缘控制中心</span>
+          <h1 data-i18n="title">智慧教室能源、安全与资产监测系统</h1>
+          <p data-i18n="subtitle">UNO 实时控制，ESP32 网关，MQTT 与 Web Dashboard 联动。</p>
+        </div>
+
+        <div class="hero-controls">
+          <div class="segmented" aria-label="Language">
+            <button id="langZh" type="button">中文</button>
+            <button id="langEn" type="button">EN</button>
+          </div>
+          <label class="select-mini">
+            <span data-i18n="background">背景</span>
+            <select id="backgroundSelect">
+              <option value="aurora">Aurora</option>
+              <option value="deep">Deep</option>
+              <option value="sunrise">Sunrise</option>
+              <option value="matrix">Matrix</option>
+              <option value="neural">Neural Flow</option>
+              <option value="hologrid">Holo Grid</option>
+              <option value="cosmos">Cosmos</option>
+              <option value="thermal">Thermal</option>
+              <option value="mono">Mono</option>
+            </select>
+          </label>
+          <label class="select-mini">
+            <span data-i18n="accent">强调色</span>
+            <select id="accentSelect">
+              <option value="cyan">Cyan</option>
+              <option value="blue">Blue</option>
+              <option value="violet">Violet</option>
+              <option value="green">Green</option>
+              <option value="rose">Rose</option>
+            </select>
+          </label>
+        </div>
+      </header>
+
+      <section class="status-dock glass">
+        <div class="mode-orb" id="modeOrb">
+          <span data-i18n="currentMode">当前模式</span>
+          <strong id="summaryBadge">Waiting</strong>
+        </div>
+        <div class="dock-metrics">
+          <div><span data-i18n="websocket">WebSocket</span><strong id="wsState">connecting</strong></div>
+          <div><span data-i18n="mqtt">MQTT</span><strong id="mqttStatus">waiting</strong></div>
+          <div><span data-i18n="lastSeen">最后更新</span><strong id="age">--</strong></div>
+          <div><span data-i18n="queue">命令队列</span><strong id="queueDepth">0</strong></div>
+        </div>
+        <label class="mode-switch" title="Auto / Manual">
+          <input id="manualSwitch" type="checkbox" />
+          <span></span>
+          <em data-i18n="autoManual">自动 / 手动</em>
+        </label>
+      </section>
+
+      <section class="quickbar glass">
+        <button data-cmd="ping" data-i18n="ping">Ping UNO</button>
+        <button data-cmd="buzz" data-i18n="buzz">蜂鸣器短响</button>
+        <button data-cmd="demo_on" data-i18n="demoOn">模拟报警</button>
+        <button data-cmd="demo_off" data-i18n="demoOff">清除报警</button>
+        <button data-cmd="status_on" data-i18n="restoreStatus">恢复状态灯</button>
+        <button id="reapplyConfig" data-i18n="reapply">重新下发配置</button>
+      </section>
+
+      <section id="cards" class="cards"></section>
+
+      <section class="insight-grid">
+        <article class="panel glass hero-chart">
+          <div class="panel-head">
+            <div>
+              <span class="kicker">Live Intelligence</span>
+              <h2 data-i18n="liveDashboard">实时仪表盘</h2>
+            </div>
+            <span class="live-pill"><i></i>LIVE</span>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <div><strong data-i18n="temperatureChart">温度趋势</strong><span id="tempChartValue">--</span></div>
+              <svg id="tempChart" viewBox="0 0 360 150" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="chart-card">
+              <div><strong data-i18n="airLightChart">环境传感</strong><span id="envChartValue">--</span></div>
+              <svg id="envChart" viewBox="0 0 360 150" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="chart-card">
+              <div><strong data-i18n="fanChart">风扇行为</strong><span id="fanChartValue">--</span></div>
+              <svg id="fanChart" viewBox="0 0 360 150" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="chart-card">
+              <div><strong data-i18n="eventChart">安全与占用</strong><span id="eventChartValue">--</span></div>
+              <svg id="eventChart" viewBox="0 0 360 150" preserveAspectRatio="none"></svg>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="ai-lab glass">
+        <div class="panel-head">
+          <div>
+            <span class="kicker">Adaptive Intelligence</span>
+            <h2 data-i18n="adaptiveTitle">偏好学习与声控</h2>
+          </div>
+          <div class="button-row">
+            <button id="dataCollectToggle" class="primary" data-i18n="collectData">开始收集数据</button>
+            <button id="refreshAnalytics" data-i18n="refreshAnalytics">刷新分析</button>
+            <button id="applyRecommendation" data-i18n="applyRecommendation">应用推荐</button>
+          </div>
+        </div>
+        <div class="ai-grid">
+          <div class="ai-card">
+            <span data-i18n="collection">数据采集</span>
+            <strong id="collectionState">--</strong>
+            <small id="collectionDetail">--</small>
+          </div>
+          <div class="ai-card">
+            <span data-i18n="comfortRisk">舒适风险</span>
+            <strong id="comfortRiskValue">--</strong>
+            <small id="energyLoadValue">--</small>
+          </div>
+          <div class="ai-card">
+            <span data-i18n="modelRecommendation">模型推荐</span>
+            <strong id="modelRecommendation">--</strong>
+            <small id="modelConfidence">--</small>
+          </div>
+          <div class="ai-card voice-card">
+            <span data-i18n="voiceControl">语音控制</span>
+            <strong id="voiceState">idle</strong>
+            <small id="voiceTranscript">--</small>
+            <div class="voice-actions">
+              <button id="voiceRecord" data-i18n="holdToSpeak">按住说话</button>
+              <input id="voiceTextInput" type="text" data-i18n-placeholder="voicePlaceholder" placeholder="例如：打开手动模式，风扇调到 180" />
+              <button id="sendVoiceText" data-i18n="sendTextCommand">发送文字</button>
+            </div>
+          </div>
+        </div>
+        <div class="task-plan glass-lite">
+          <div class="task-plan-head">
+            <div>
+              <span>Qwen Planner</span>
+              <strong id="taskPlanTitle">No active task timeline</strong>
+            </div>
+            <button id="cancelTaskPlan" type="button">Cancel Timeline</button>
+          </div>
+          <div id="taskTimeline" class="task-timeline"></div>
+        </div>
+        <div class="analytics-strip">
+          <div><span data-i18n="occupancyRate">占用率</span><b id="occupancyRateValue">--</b></div>
+          <div><span data-i18n="fanDuty">风扇占空</span><b id="fanDutyValue">--</b></div>
+          <div><span data-i18n="manualRate">手动覆盖</span><b id="manualRateValue">--</b></div>
+          <div><span data-i18n="dataNeeded">还需样本</span><b id="dataNeededValue">--</b></div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <article class="panel glass panel-auto">
+          <div class="panel-head">
+            <div>
+              <span class="kicker" data-i18n="autoPolicy">自动策略</span>
+              <h2 data-i18n="thresholds">阈值与亮度</h2>
+            </div>
+            <button id="applyConfig" class="primary" data-i18n="applySave">应用并保存</button>
+          </div>
+
+          <div class="form-grid">
+            <label><span data-i18n="fanStart">风扇启动温度</span><input id="fanOnInput" type="number" min="15" max="45" step="0.1" /></label>
+            <label><span data-i18n="fanStop">风扇停止温度</span><input id="fanOffInput" type="number" min="10" max="44" step="0.1" /></label>
+            <label class="range"><span data-i18n="ledMax">教室灯上限</span><input id="ledMaxInput" type="range" min="0" max="255" /><output id="ledMaxValue">--</output></label>
+            <label class="range"><span data-i18n="statusMax">状态灯上限</span><input id="statusMaxInput" type="range" min="0" max="255" /><output id="statusMaxValue">--</output></label>
+            <label><span data-i18n="lightDark">光线变暗阈值</span><input id="lightDarkInput" type="number" min="0" max="1023" step="1" /></label>
+            <label><span data-i18n="lightBright">光线变亮阈值</span><input id="lightBrightInput" type="number" min="0" max="1023" step="1" /></label>
+          </div>
+        </article>
+
+        <article class="panel glass">
+          <div class="panel-head">
+            <div>
+              <span class="kicker" data-i18n="presetPolicy">预设策略</span>
+              <h2 data-i18n="presets">一键场景</h2>
+            </div>
+          </div>
+          <div id="presetList" class="preset-list"></div>
+        </article>
+
+        <article class="panel glass">
+          <div class="panel-head">
+            <div>
+              <span class="kicker" data-i18n="manualModule">手动模块</span>
+              <h2 data-i18n="manualControl">元件控制</h2>
+            </div>
+            <button id="applyManual" class="primary" data-i18n="applyManual">应用手动</button>
+          </div>
+
+          <div id="manualDetails" class="manual-reveal">
+            <div class="manual-grid">
+            <label class="toggle-line"><input id="manualLamp" type="checkbox" /><span data-i18n="lamp">教室灯</span></label>
+            <label class="toggle-line"><input id="manualFan" type="checkbox" /><span data-i18n="fan">风扇</span></label>
+            <label class="toggle-line"><input id="manualBuzzer" type="checkbox" /><span data-i18n="buzzer">蜂鸣器</span></label>
+            <label class="range wide"><span data-i18n="fanPwm">风扇 PWM</span><input id="manualPwm" type="range" min="0" max="255" /><output id="manualPwmValue">--</output></label>
+            <label class="wide"><span data-i18n="statusLight">状态灯</span>
+              <select id="manualStatus">
+                <option value="ALL" data-i18n="statusAll">三灯全亮</option>
+                <option value="R" data-i18n="red">红</option>
+                <option value="Y" data-i18n="yellow">黄</option>
+                <option value="G" data-i18n="green">绿</option>
+                <option value="OFF" data-i18n="off">关闭</option>
+              </select>
+            </label>
+            </div>
+          </div>
+          <p id="manualHint" class="hint" data-i18n="manualHint">打开手动模式后显示元件控制。</p>
+          <div class="button-row">
+            <button id="allStatusLights" data-i18n="allStatus">三灯全亮</button>
+            <button id="returnAuto" data-i18n="returnAuto">回到自动</button>
+          </div>
+        </article>
+
+        <article class="panel glass">
+          <div class="panel-head">
+            <div>
+              <span class="kicker">DIY</span>
+              <h2 data-i18n="customStrategy">自定义策略</h2>
+            </div>
+            <button id="saveStrategy" class="primary" data-i18n="saveStrategy">保存策略</button>
+          </div>
+          <div class="form-grid">
+            <label class="wide"><span data-i18n="strategyName">策略名称</span><input id="strategyName" type="text" maxlength="40" placeholder="My classroom mode" /></label>
+            <label class="wide"><span data-i18n="strategyDesc">说明</span><input id="strategyDesc" type="text" maxlength="120" /></label>
+          </div>
+          <div id="customStrategies" class="preset-list compact"></div>
+        </article>
+      </section>
+
+      <section class="panels">
+        <article class="glass">
+          <div class="panel-head compact-head">
+            <div>
+              <span class="kicker">Telemetry</span>
+              <h2 data-i18n="rawTelemetry">原始遥测</h2>
+            </div>
+          </div>
+          <div id="telemetryGrid" class="telemetry-grid"></div>
+        </article>
+        <article class="glass">
+          <details id="mqttDetails" class="log-details">
+            <summary><span data-i18n="mqttLog">MQTT 日志</span><em data-i18n="expandLog">点击展开</em></summary>
+            <div id="log" class="log"></div>
+          </details>
+        </article>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "smartclassroom-web-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MQTT broker and web dashboard for Smart Classroom Phase 3 debugging.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "aedes": "^0.51.3",
+    "express": "^5.1.0",
+    "selfsigned": "^5.5.0",
+    "ws": "^8.18.3"
+  }
+}
