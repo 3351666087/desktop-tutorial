@@ -1,8 +1,8 @@
 # Smart Classroom Delivery Self-Check
 
-- Generated: 2026-05-24 21:20:31
+- Generated: 2026-05-24 21:41:10
 - Root: `D:\desktop\新项目`
-- Summary: PASS 38 / WARN 0 / FAIL 0
+- Summary: PASS 41 / WARN 0 / FAIL 0
 
 | Status | Check | Detail |
 | --- | --- | --- |
@@ -36,6 +36,9 @@
 | PASS | ppt layout QA: slide bounds | 16 slides checked |
 | PASS | ppt layout QA: text overflow | no estimated text overflow |
 | PASS | ppt layout QA: container fit | text boxes stay inside detected containers |
+| PASS | ppt visual QA: PowerPoint render | 16/16 slides rendered |
+| PASS | ppt visual QA: ink vs text box | 251 text elements checked |
+| PASS | ppt visual QA: ink vs container | rendered text ink stays inside detected containers |
 | PASS | sensitive key scan | no obvious API keys in tracked delivery files |
 | PASS | node syntax: SmartClassroom_WebDashboard/server.js | ok |
 | PASS | node syntax: SmartClassroom_WebDashboard/public/app.js | ok |

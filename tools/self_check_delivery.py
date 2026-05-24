@@ -13,13 +13,21 @@ from pathlib import Path
 
 try:
     from PIL import ImageFont
+    from PIL import Image
 except ImportError:  # pragma: no cover - the check still runs with rough estimates.
     ImageFont = None
+    Image = None
+
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover
+    np = None
 
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "docs" / "SELF_CHECK_REPORT.md"
 LAYOUT_DIR = ROOT / "docs" / "presentation" / "layout"
+POWERPOINT_RENDER_DIR = ROOT / "outputs" / "ppt_powerpoint_render"
 
 
 REQUIRED_FILES = [
@@ -305,6 +313,194 @@ def check_layout_text_fit(checks: list[Check]) -> None:
         add(checks, "ppt layout QA: container fit", "PASS", "text boxes stay inside detected containers")
 
 
+def hex_to_rgb(value: str | None) -> tuple[int, int, int] | None:
+    if not value:
+        return None
+    text = str(value).strip()
+    if not text.startswith("#"):
+        return None
+    text = text[1:]
+    if len(text) == 8:
+        text = text[:6]
+    if len(text) != 6:
+        return None
+    try:
+        return tuple(int(text[index : index + 2], 16) for index in (0, 2, 4))
+    except ValueError:
+        return None
+
+
+def render_ppt_with_powerpoint(checks: list[Check]) -> dict[int, Path]:
+    pptx = ROOT / "docs/presentation/SmartClassroom_IoT104TC_Demo.pptx"
+    POWERPOINT_RENDER_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        import win32com.client
+    except Exception as exc:  # pragma: no cover - depends on Windows desktop image.
+        add(checks, "ppt visual QA: PowerPoint render", "WARN", f"pywin32/PowerPoint unavailable: {exc}")
+        return {}
+
+    app = None
+    presentation = None
+    try:
+        app = win32com.client.Dispatch("PowerPoint.Application")
+        app.Visible = True
+        presentation = app.Presentations.Open(str(pptx), WithWindow=False)
+        presentation.Export(str(POWERPOINT_RENDER_DIR), "PNG", 1280, 720)
+        slide_count = presentation.Slides.Count
+    except Exception as exc:
+        add(checks, "ppt visual QA: PowerPoint render", "WARN", f"render failed: {exc}")
+        return {}
+    finally:
+        if presentation is not None:
+            presentation.Close()
+        if app is not None:
+            app.Quit()
+
+    rendered: dict[int, Path] = {}
+    for image_path in POWERPOINT_RENDER_DIR.glob("*.PNG"):
+        digits = "".join(ch for ch in image_path.stem if ch.isdigit())
+        if digits:
+            rendered[int(digits)] = image_path
+    add(checks, "ppt visual QA: PowerPoint render", "PASS", f"{len(rendered)}/{slide_count} slides rendered")
+    return rendered
+
+
+def component_bboxes(mask: "np.ndarray") -> list[tuple[int, int, int, int, int]]:
+    height, width = mask.shape
+    visited = np.zeros(mask.shape, dtype=bool)
+    components: list[tuple[int, int, int, int, int]] = []
+    ys, xs = np.nonzero(mask)
+    for start_x, start_y in zip(xs.tolist(), ys.tolist()):
+        if visited[start_y, start_x] or not mask[start_y, start_x]:
+            continue
+        stack = [(start_x, start_y)]
+        visited[start_y, start_x] = True
+        min_x = max_x = start_x
+        min_y = max_y = start_y
+        area = 0
+        while stack:
+            x, y = stack.pop()
+            area += 1
+            min_x = min(min_x, x)
+            max_x = max(max_x, x)
+            min_y = min(min_y, y)
+            max_y = max(max_y, y)
+            for nx in (x - 1, x, x + 1):
+                for ny in (y - 1, y, y + 1):
+                    if nx == x and ny == y:
+                        continue
+                    if 0 <= nx < width and 0 <= ny < height and mask[ny, nx] and not visited[ny, nx]:
+                        visited[ny, nx] = True
+                        stack.append((nx, ny))
+        components.append((min_x, min_y, max_x + 1, max_y + 1, area))
+    return components
+
+
+def visual_ink_bbox(image_array: "np.ndarray", bbox: list[float], color: tuple[int, int, int], pad: int = 10) -> list[float] | None:
+    height, width, _ = image_array.shape
+    x, y, w, h = bbox
+    left = max(0, int(x - pad))
+    top = max(0, int(y - pad))
+    right = min(width, int(x + w + pad))
+    bottom = min(height, int(y + h + pad))
+    if right <= left or bottom <= top:
+        return None
+
+    crop = image_array[top:bottom, left:right, :3].astype(np.int32)
+    target = np.array(color, dtype=np.int32)
+    dist = np.sqrt(((crop - target) ** 2).sum(axis=2))
+    threshold = 92 if max(color) > 210 else 76
+    mask = dist <= threshold
+
+    components = []
+    for c_left, c_top, c_right, c_bottom, area in component_bboxes(mask):
+        cw = c_right - c_left
+        ch = c_bottom - c_top
+        if area < 4:
+            continue
+        # Remove card borders, grid lines and arrows. Text glyphs are not single-pixel rails.
+        if (cw > 28 and ch <= 4) or (ch > 28 and cw <= 4):
+            continue
+        if area > 2500 and (cw > w * 0.85 or ch > h * 0.85):
+            continue
+        components.append((left + c_left, top + c_top, left + c_right, top + c_bottom, area))
+    if not components:
+        return None
+    return [
+        float(min(item[0] for item in components)),
+        float(min(item[1] for item in components)),
+        float(max(item[2] for item in components) - min(item[0] for item in components)),
+        float(max(item[3] for item in components) - min(item[1] for item in components)),
+    ]
+
+
+def check_visual_text_fit(checks: list[Check]) -> None:
+    if Image is None or np is None:
+        add(checks, "ppt visual QA", "WARN", "Pillow or numpy unavailable")
+        return
+    rendered = render_ppt_with_powerpoint(checks)
+    if not rendered:
+        return
+    if not LAYOUT_DIR.exists():
+        add(checks, "ppt visual QA", "WARN", f"layout JSON missing: {rel(LAYOUT_DIR)}")
+        return
+
+    ink_box_issues: list[str] = []
+    ink_container_issues: list[str] = []
+    checked = 0
+
+    for layout_file in sorted(LAYOUT_DIR.glob("slide-*.layout.json")):
+        data = json.loads(layout_file.read_text(encoding="utf-8"))
+        slide_no = int(data.get("slide", {}).get("slide") or re.search(r"(\d+)", layout_file.name).group(1))
+        image_path = rendered.get(slide_no)
+        if not image_path:
+            continue
+        image_array = np.array(Image.open(image_path).convert("RGB"))
+        elements = data.get("elements", [])
+        containers = [element for element in elements if is_container_shape(element)]
+        for element in elements:
+            text = str(element.get("text", "")).strip()
+            if not text:
+                continue
+            style = element.get("resolvedTextStyle", {})
+            color = hex_to_rgb(style.get("color"))
+            if color is None:
+                continue
+            font_size = float(element.get("resolvedFontSize") or style.get("fontSize") or 18)
+            bbox = [float(value) for value in element.get("bbox", [0, 0, 0, 0])]
+            ink = visual_ink_bbox(image_array, bbox, color)
+            if ink is None:
+                continue
+            checked += 1
+            text_margin = max(10.0, font_size * 0.5)
+            if not contains_bbox(bbox, ink, margin=text_margin):
+                ink_box_issues.append(f"S{slide_no} '{text[:34]}' ink {ink} escapes text box {bbox}")
+
+            containing = [
+                container
+                for container in containers
+                if center_inside([float(v) for v in container.get("bbox", [0, 0, 0, 0])], bbox)
+                and bbox_area(container.get("bbox", [0, 0, 0, 0])) > bbox_area(bbox) * 1.12
+            ]
+            if containing:
+                nearest = min(containing, key=lambda item: bbox_area(item.get("bbox", [0, 0, 0, 0])))
+                container_bbox = [float(v) for v in nearest.get("bbox", [0, 0, 0, 0])]
+                if not contains_bbox(container_bbox, ink, margin=6):
+                    ink_container_issues.append(
+                        f"S{slide_no} '{text[:34]}' ink {ink} escapes container {container_bbox}"
+                    )
+
+    if ink_box_issues:
+        add(checks, "ppt visual QA: ink vs text box", "FAIL", "; ".join(ink_box_issues[:10]))
+    else:
+        add(checks, "ppt visual QA: ink vs text box", "PASS", f"{checked} text elements checked")
+
+    if ink_container_issues:
+        add(checks, "ppt visual QA: ink vs container", "FAIL", "; ".join(ink_container_issues[:10]))
+    else:
+        add(checks, "ppt visual QA: ink vs container", "PASS", "rendered text ink stays inside detected containers")
+
+
 def iter_source_files() -> list[Path]:
     files: list[Path] = []
     for path in ROOT.rglob("*"):
@@ -414,6 +610,7 @@ def main() -> int:
     check_required_files(checks)
     check_ppt(checks)
     check_layout_text_fit(checks)
+    check_visual_text_fit(checks)
     check_secrets(checks)
     check_optional_commands(checks, compile_checks=args.compile)
     write_report(checks)
