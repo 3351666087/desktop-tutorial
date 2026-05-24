@@ -57,6 +57,22 @@ smartclassroom_launcher.py        PySide6 launcher UI
 NodeRED_Phase3D_Setup.md          Optional Node-RED/MQTT Explorer setup notes
 ```
 
+## Team PDF Handoff
+
+For teammates, use the PDF files instead of raw Markdown or self-check files:
+
+- `docs/SmartClassroom_Team_Guide_ZH.pdf` - Chinese project flow, features, and speaking priority.
+- `docs/SmartClassroom_Assembly_Checklist_ZH.pdf` - Chinese onsite wiring and module checklist.
+- `docs/SmartClassroom_Environment_Setup_ZH.pdf` - Chinese environment setup and run guide.
+- `docs/SmartClassroom_Speech_Script_Bilingual.pdf` - bilingual presentation script.
+- `docs/presentation/SmartClassroom_IoT104TC_Demo.pdf` - read-only PDF export of the final slide deck.
+
+Regenerate them with:
+
+```powershell
+python .\tools\build_team_pdfs.py
+```
+
 ## Hardware Summary
 
 ### Modules From the 48-Piece Kit Photo

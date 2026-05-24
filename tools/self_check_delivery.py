@@ -33,6 +33,11 @@ POWERPOINT_RENDER_DIR = ROOT / "outputs" / "ppt_powerpoint_render"
 REQUIRED_FILES = [
     "README.md",
     "docs/presentation/SmartClassroom_IoT104TC_Demo.pptx",
+    "docs/presentation/SmartClassroom_IoT104TC_Demo.pdf",
+    "docs/SmartClassroom_Team_Guide_ZH.pdf",
+    "docs/SmartClassroom_Assembly_Checklist_ZH.pdf",
+    "docs/SmartClassroom_Environment_Setup_ZH.pdf",
+    "docs/SmartClassroom_Speech_Script_Bilingual.pdf",
     "docs/SmartClassroom_Onsite_Assembly_Checklist.pdf",
     "docs/ASSEMBLY_CHECKLIST.md",
     "docs/ENV_SETUP_ZH.md",
@@ -627,7 +632,12 @@ def check_optional_commands(checks: list[Check], compile_checks: bool) -> None:
         code, output = run_command(["node", "--check", target])
         add(checks, f"node syntax: {target}", "PASS" if code == 0 else "FAIL", output[-600:] or "ok")
 
-    py_targets = ["run_smartclassroom.py", "smartclassroom_launcher.py", "tools/generate_team_flowchart.py"]
+    py_targets = [
+        "run_smartclassroom.py",
+        "smartclassroom_launcher.py",
+        "tools/generate_team_flowchart.py",
+        "tools/build_team_pdfs.py",
+    ]
     for target in py_targets:
         code, output = run_command([sys.executable, "-m", "py_compile", target])
         add(checks, f"python syntax: {target}", "PASS" if code == 0 else "FAIL", output[-600:] or "ok")

@@ -1,13 +1,18 @@
 # Smart Classroom Delivery Self-Check
 
-- Generated: 2026-05-24 22:06:55
+- Generated: 2026-05-24 22:32:30
 - Root: `D:\desktop\新项目`
-- Summary: PASS 43 / WARN 0 / FAIL 0
+- Summary: PASS 49 / WARN 0 / FAIL 0
 
 | Status | Check | Detail |
 | --- | --- | --- |
-| PASS | required file: README.md | 9,066 bytes |
+| PASS | required file: README.md | 9,718 bytes |
 | PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,267,528 bytes |
+| PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pdf | 790,604 bytes |
+| PASS | required file: docs/SmartClassroom_Team_Guide_ZH.pdf | 485,673 bytes |
+| PASS | required file: docs/SmartClassroom_Assembly_Checklist_ZH.pdf | 298,305 bytes |
+| PASS | required file: docs/SmartClassroom_Environment_Setup_ZH.pdf | 303,858 bytes |
+| PASS | required file: docs/SmartClassroom_Speech_Script_Bilingual.pdf | 263,274 bytes |
 | PASS | required file: docs/SmartClassroom_Onsite_Assembly_Checklist.pdf | 680,525 bytes |
 | PASS | required file: docs/ASSEMBLY_CHECKLIST.md | 6,845 bytes |
 | PASS | required file: docs/ENV_SETUP_ZH.md | 6,601 bytes |
@@ -47,5 +52,6 @@
 | PASS | python syntax: run_smartclassroom.py | ok |
 | PASS | python syntax: smartclassroom_launcher.py | ok |
 | PASS | python syntax: tools/generate_team_flowchart.py | ok |
+| PASS | python syntax: tools/build_team_pdfs.py | ok |
 | PASS | arduino compile: UNO_Phase3_TelemetryPatch | Sketch uses 17004 bytes (52%) of program storage space. Maximum is 32256 bytes.<br>Global variables use 1089 bytes (53%) of dynamic memory, leaving 959 bytes for local variables. Maximum is 2048 bytes. |
 | PASS | arduino compile: ESP32_3B_MQTT_Gateway | Sketch uses 757949 bytes (57%) of program storage space. Maximum is 1310720 bytes.<br>Global variables use 45568 bytes (13%) of dynamic memory, leaving 282112 bytes for local variables. Maximum is 327680 bytes. |
