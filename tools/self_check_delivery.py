@@ -93,18 +93,21 @@ def check_required_files(checks: list[Check]) -> None:
             add(checks, f"required file: {item}", "FAIL", "missing or empty")
 
 
-def ppt_text_from_zip(pptx: Path) -> tuple[int, int, str]:
+def ppt_text_from_zip(pptx: Path) -> tuple[int, int, str, list[float]]:
     slide_count = 0
     media_count = 0
     chunks: list[str] = []
+    font_sizes: list[float] = []
     with zipfile.ZipFile(pptx) as zf:
         for name in zf.namelist():
             if re.match(r"ppt/slides/slide\d+\.xml$", name):
                 slide_count += 1
-                chunks.append(zf.read(name).decode("utf-8", errors="ignore"))
+                xml = zf.read(name).decode("utf-8", errors="ignore")
+                chunks.append(xml)
+                font_sizes.extend(int(value) / 100 for value in re.findall(r' sz="(\d+)"', xml))
             elif name.startswith("ppt/media/"):
                 media_count += 1
-    return slide_count, media_count, "\n".join(chunks)
+    return slide_count, media_count, "\n".join(chunks), font_sizes
 
 
 def check_ppt(checks: list[Check]) -> None:
@@ -113,13 +116,18 @@ def check_ppt(checks: list[Check]) -> None:
         add(checks, "pptx structure", "FAIL", "PPTX missing")
         return
     try:
-        slide_count, media_count, text = ppt_text_from_zip(pptx)
+        slide_count, media_count, text, font_sizes = ppt_text_from_zip(pptx)
     except zipfile.BadZipFile as exc:
         add(checks, "pptx structure", "FAIL", f"not a valid PPTX zip: {exc}")
         return
 
     add(checks, "pptx slide count", "PASS" if slide_count >= 16 else "FAIL", f"{slide_count} slides")
     add(checks, "pptx embedded media", "PASS" if media_count >= 4 else "WARN", f"{media_count} media files")
+    if font_sizes:
+        min_font = min(font_sizes)
+        add(checks, "pptx minimum font size", "PASS" if min_font >= 16 else "FAIL", f"{min_font:.1f} pt")
+    else:
+        add(checks, "pptx minimum font size", "WARN", "no explicit font sizes found")
 
     normalized = re.sub(r"<[^>]+>", " ", text)
     for keyword in PPT_KEYWORDS:

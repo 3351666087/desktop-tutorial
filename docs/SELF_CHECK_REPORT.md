@@ -1,13 +1,13 @@
 # Smart Classroom Delivery Self-Check
 
-- Generated: 2026-05-24 20:41:39
+- Generated: 2026-05-24 21:00:42
 - Root: `D:\desktop\新项目`
-- Summary: PASS 34 / WARN 0 / FAIL 0
+- Summary: PASS 35 / WARN 0 / FAIL 0
 
 | Status | Check | Detail |
 | --- | --- | --- |
 | PASS | required file: README.md | 9,066 bytes |
-| PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,276,431 bytes |
+| PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,267,558 bytes |
 | PASS | required file: docs/SmartClassroom_Onsite_Assembly_Checklist.pdf | 680,525 bytes |
 | PASS | required file: docs/ASSEMBLY_CHECKLIST.md | 6,845 bytes |
 | PASS | required file: docs/ENV_SETUP_ZH.md | 6,601 bytes |
@@ -23,6 +23,7 @@
 | PASS | required file: smartclassroom_launcher.py | 4,101 bytes |
 | PASS | pptx slide count | 16 slides |
 | PASS | pptx embedded media | 8 media files |
+| PASS | pptx minimum font size | 16.5 pt |
 | PASS | ppt keyword: SAFETY_ALARM | present |
 | PASS | ppt keyword: Arduino UNO | present |
 | PASS | ppt keyword: ESP32 | present |
