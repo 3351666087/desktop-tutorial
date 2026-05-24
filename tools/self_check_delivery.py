@@ -161,6 +161,18 @@ def bbox_area(bbox: list[float]) -> float:
     return max(0.0, bbox[2]) * max(0.0, bbox[3])
 
 
+def intersection_bbox(left_bbox: list[float], right_bbox: list[float]) -> list[float] | None:
+    left_x, left_y, left_w, left_h = left_bbox
+    right_x, right_y, right_w, right_h = right_bbox
+    x1 = max(left_x, right_x)
+    y1 = max(left_y, right_y)
+    x2 = min(left_x + left_w, right_x + right_w)
+    y2 = min(left_y + left_h, right_y + right_h)
+    if x2 <= x1 or y2 <= y1:
+        return None
+    return [x1, y1, x2 - x1, y2 - y1]
+
+
 def contains_bbox(outer: list[float], inner: list[float], margin: float = 0.0) -> bool:
     ox, oy, ow, oh = outer
     ix, iy, iw, ih = inner
@@ -339,6 +351,37 @@ def check_layout_arrowheads(checks: list[Check]) -> None:
         )
     else:
         add(checks, "ppt layout QA: arrowheads", "PASS", "no unrotated triangle arrowheads detected")
+
+
+def check_layout_container_overlaps(checks: list[Check]) -> None:
+    if not LAYOUT_DIR.exists():
+        add(checks, "ppt layout QA: container overlaps", "WARN", f"layout JSON not found: {rel(LAYOUT_DIR)}")
+        return
+
+    overlap_issues: list[str] = []
+    for layout_file in sorted(LAYOUT_DIR.glob("slide-*.layout.json")):
+        data = json.loads(layout_file.read_text(encoding="utf-8"))
+        slide_no = data.get("slide", {}).get("slide") or layout_file.stem
+        containers = [element for element in data.get("elements", []) if is_container_shape(element)]
+        for index, left in enumerate(containers):
+            left_bbox = [float(v) for v in left.get("bbox", [0, 0, 0, 0])]
+            for right in containers[index + 1 :]:
+                right_bbox = [float(v) for v in right.get("bbox", [0, 0, 0, 0])]
+                overlap = intersection_bbox(left_bbox, right_bbox)
+                if overlap is None:
+                    continue
+                if overlap[2] < 8 or overlap[3] < 8 or bbox_area(overlap) < 180:
+                    continue
+                if contains_bbox(left_bbox, right_bbox, margin=2) or contains_bbox(right_bbox, left_bbox, margin=2):
+                    continue
+                if center_inside(left_bbox, right_bbox) or center_inside(right_bbox, left_bbox):
+                    continue
+                overlap_issues.append(f"S{slide_no} containers overlap {overlap}")
+
+    if overlap_issues:
+        add(checks, "ppt layout QA: container overlaps", "FAIL", "; ".join(overlap_issues[:10]))
+    else:
+        add(checks, "ppt layout QA: container overlaps", "PASS", "no non-nested container collisions detected")
 
 
 def hex_to_rgb(value: str | None) -> tuple[int, int, int] | None:
@@ -639,6 +682,7 @@ def main() -> int:
     check_ppt(checks)
     check_layout_text_fit(checks)
     check_layout_arrowheads(checks)
+    check_layout_container_overlaps(checks)
     check_visual_text_fit(checks)
     check_secrets(checks)
     check_optional_commands(checks, compile_checks=args.compile)
