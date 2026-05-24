@@ -1,13 +1,13 @@
 # Smart Classroom Delivery Self-Check
 
-- Generated: 2026-05-24 21:41:10
+- Generated: 2026-05-24 21:49:42
 - Root: `D:\desktop\新项目`
-- Summary: PASS 41 / WARN 0 / FAIL 0
+- Summary: PASS 42 / WARN 0 / FAIL 0
 
 | Status | Check | Detail |
 | --- | --- | --- |
 | PASS | required file: README.md | 9,066 bytes |
-| PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,267,272 bytes |
+| PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,267,541 bytes |
 | PASS | required file: docs/SmartClassroom_Onsite_Assembly_Checklist.pdf | 680,525 bytes |
 | PASS | required file: docs/ASSEMBLY_CHECKLIST.md | 6,845 bytes |
 | PASS | required file: docs/ENV_SETUP_ZH.md | 6,601 bytes |
@@ -36,8 +36,9 @@
 | PASS | ppt layout QA: slide bounds | 16 slides checked |
 | PASS | ppt layout QA: text overflow | no estimated text overflow |
 | PASS | ppt layout QA: container fit | text boxes stay inside detected containers |
+| PASS | ppt layout QA: arrowheads | no unrotated triangle arrowheads detected |
 | PASS | ppt visual QA: PowerPoint render | 16/16 slides rendered |
-| PASS | ppt visual QA: ink vs text box | 251 text elements checked |
+| PASS | ppt visual QA: ink vs text box | 268 text elements checked |
 | PASS | ppt visual QA: ink vs container | rendered text ink stays inside detected containers |
 | PASS | sensitive key scan | no obvious API keys in tracked delivery files |
 | PASS | node syntax: SmartClassroom_WebDashboard/server.js | ok |

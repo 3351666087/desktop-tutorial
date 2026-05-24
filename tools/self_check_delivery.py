@@ -313,6 +313,34 @@ def check_layout_text_fit(checks: list[Check]) -> None:
         add(checks, "ppt layout QA: container fit", "PASS", "text boxes stay inside detected containers")
 
 
+def check_layout_arrowheads(checks: list[Check]) -> None:
+    if not LAYOUT_DIR.exists():
+        add(checks, "ppt layout QA: arrowheads", "WARN", f"layout JSON not found: {rel(LAYOUT_DIR)}")
+        return
+
+    triangle_issues: list[str] = []
+    for layout_file in sorted(LAYOUT_DIR.glob("slide-*.layout.json")):
+        data = json.loads(layout_file.read_text(encoding="utf-8"))
+        slide_no = data.get("slide", {}).get("slide") or layout_file.stem
+        for element in data.get("elements", []):
+            geometry = str(element.get("geometry") or "").lower()
+            bbox = [float(v) for v in element.get("bbox", [0, 0, 0, 0])]
+            width, height = bbox[2], bbox[3]
+            fill = str(element.get("fillColor") or "")
+            if geometry == "triangle" and width <= 36 and height <= 36 and not is_transparent(fill):
+                triangle_issues.append(f"S{slide_no} triangle arrowhead bbox {bbox}")
+
+    if triangle_issues:
+        add(
+            checks,
+            "ppt layout QA: arrowheads",
+            "FAIL",
+            "unrotated triangle arrowheads found: " + "; ".join(triangle_issues[:10]),
+        )
+    else:
+        add(checks, "ppt layout QA: arrowheads", "PASS", "no unrotated triangle arrowheads detected")
+
+
 def hex_to_rgb(value: str | None) -> tuple[int, int, int] | None:
     if not value:
         return None
@@ -485,7 +513,7 @@ def check_visual_text_fit(checks: list[Check]) -> None:
             if containing:
                 nearest = min(containing, key=lambda item: bbox_area(item.get("bbox", [0, 0, 0, 0])))
                 container_bbox = [float(v) for v in nearest.get("bbox", [0, 0, 0, 0])]
-                if not contains_bbox(container_bbox, ink, margin=6):
+                if not contains_bbox(container_bbox, ink, margin=1):
                     ink_container_issues.append(
                         f"S{slide_no} '{text[:34]}' ink {ink} escapes container {container_bbox}"
                     )
@@ -610,6 +638,7 @@ def main() -> int:
     check_required_files(checks)
     check_ppt(checks)
     check_layout_text_fit(checks)
+    check_layout_arrowheads(checks)
     check_visual_text_fit(checks)
     check_secrets(checks)
     check_optional_commands(checks, compile_checks=args.compile)
