@@ -1,13 +1,13 @@
 # Smart Classroom Delivery Self-Check
 
-- Generated: 2026-05-24 21:00:42
+- Generated: 2026-05-24 21:20:31
 - Root: `D:\desktop\新项目`
-- Summary: PASS 35 / WARN 0 / FAIL 0
+- Summary: PASS 38 / WARN 0 / FAIL 0
 
 | Status | Check | Detail |
 | --- | --- | --- |
 | PASS | required file: README.md | 9,066 bytes |
-| PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,267,558 bytes |
+| PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,267,272 bytes |
 | PASS | required file: docs/SmartClassroom_Onsite_Assembly_Checklist.pdf | 680,525 bytes |
 | PASS | required file: docs/ASSEMBLY_CHECKLIST.md | 6,845 bytes |
 | PASS | required file: docs/ENV_SETUP_ZH.md | 6,601 bytes |
@@ -33,6 +33,9 @@
 | PASS | ppt keyword: ACK | present |
 | PASS | ppt keyword: References | present |
 | PASS | ppt keyword: self-check | present |
+| PASS | ppt layout QA: slide bounds | 16 slides checked |
+| PASS | ppt layout QA: text overflow | no estimated text overflow |
+| PASS | ppt layout QA: container fit | text boxes stay inside detected containers |
 | PASS | sensitive key scan | no obvious API keys in tracked delivery files |
 | PASS | node syntax: SmartClassroom_WebDashboard/server.js | ok |
 | PASS | node syntax: SmartClassroom_WebDashboard/public/app.js | ok |

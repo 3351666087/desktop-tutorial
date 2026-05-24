@@ -8,11 +8,18 @@ import subprocess
 import sys
 import zipfile
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
+
+try:
+    from PIL import ImageFont
+except ImportError:  # pragma: no cover - the check still runs with rough estimates.
+    ImageFont = None
 
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "docs" / "SELF_CHECK_REPORT.md"
+LAYOUT_DIR = ROOT / "docs" / "presentation" / "layout"
 
 
 REQUIRED_FILES = [
@@ -135,6 +142,169 @@ def check_ppt(checks: list[Check]) -> None:
         add(checks, f"ppt keyword: {keyword}", status, "present" if status == "PASS" else "not found in slide XML")
 
 
+def is_transparent(value: str | None) -> bool:
+    if value is None:
+        return True
+    lowered = str(value).lower()
+    return lowered in {"none", "transparent"} or "rgba(0, 0, 0, 0)" in lowered or lowered.endswith("00")
+
+
+def bbox_area(bbox: list[float]) -> float:
+    return max(0.0, bbox[2]) * max(0.0, bbox[3])
+
+
+def contains_bbox(outer: list[float], inner: list[float], margin: float = 0.0) -> bool:
+    ox, oy, ow, oh = outer
+    ix, iy, iw, ih = inner
+    return (
+        ix >= ox - margin
+        and iy >= oy - margin
+        and ix + iw <= ox + ow + margin
+        and iy + ih <= oy + oh + margin
+    )
+
+
+def center_inside(outer: list[float], inner: list[float]) -> bool:
+    ox, oy, ow, oh = outer
+    ix, iy, iw, ih = inner
+    cx = ix + iw / 2
+    cy = iy + ih / 2
+    return ox <= cx <= ox + ow and oy <= cy <= oy + oh
+
+
+@lru_cache(maxsize=128)
+def load_font(font_size: int, bold: bool = False):
+    if ImageFont is None:
+        return None
+    candidates = [
+        Path("C:/Windows/Fonts/aptos.ttf"),
+        Path("C:/Windows/Fonts/aptosdisplay.ttf"),
+        Path("C:/Windows/Fonts/calibrib.ttf" if bold else "C:/Windows/Fonts/calibri.ttf"),
+        Path("C:/Windows/Fonts/arialbd.ttf" if bold else "C:/Windows/Fonts/arial.ttf"),
+        Path("C:/Windows/Fonts/msyhbd.ttc" if bold else "C:/Windows/Fonts/msyh.ttc"),
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return ImageFont.truetype(str(candidate), font_size)
+    return ImageFont.load_default()
+
+
+def estimate_text_width(text: str, font_size: float, bold: bool = False) -> float:
+    text = text or ""
+    font = load_font(max(1, round(font_size)), bold)
+    if font is not None:
+        left, _, right, _ = font.getbbox(text)
+        return max(0, right - left)
+    wide = sum(1 for ch in text if ord(ch) > 127)
+    narrow = len(text) - wide
+    return wide * font_size + narrow * font_size * 0.55
+
+
+def text_lines(element: dict) -> list[str]:
+    lines = element.get("textLayout", {}).get("lines") or []
+    extracted = [str(line.get("text", "")) for line in lines if str(line.get("text", ""))]
+    if extracted:
+        return extracted
+    return str(element.get("text", "")).splitlines() or [str(element.get("text", ""))]
+
+
+def is_container_shape(element: dict) -> bool:
+    if element.get("kind") != "shape" or element.get("text"):
+        return False
+    bbox = element.get("bbox") or [0, 0, 0, 0]
+    if len(bbox) != 4:
+        return False
+    _, _, width, height = bbox
+    if width < 50 or height < 28:
+        return False
+    if width > 1180 and height > 640:
+        return False
+    has_fill = not is_transparent(element.get("fillColor"))
+    has_line = not is_transparent(element.get("lineColor")) and float(element.get("lineWidth") or 0) > 0
+    return has_fill or has_line
+
+
+def check_layout_text_fit(checks: list[Check]) -> None:
+    if not LAYOUT_DIR.exists():
+        add(checks, "ppt layout QA", "WARN", f"layout JSON not found: {rel(LAYOUT_DIR)}")
+        return
+
+    layout_files = sorted(LAYOUT_DIR.glob("slide-*.layout.json"))
+    if not layout_files:
+        add(checks, "ppt layout QA", "WARN", f"no slide layout JSON in {rel(LAYOUT_DIR)}")
+        return
+
+    frame_issues: list[str] = []
+    overflow_issues: list[str] = []
+    container_issues: list[str] = []
+
+    for layout_file in layout_files:
+        data = json.loads(layout_file.read_text(encoding="utf-8"))
+        slide_no = data.get("slide", {}).get("slide") or layout_file.stem
+        slide_frame = data.get("slide", {}).get("frame", {"width": 1280, "height": 720})
+        slide_bbox = [0, 0, float(slide_frame.get("width", 1280)), float(slide_frame.get("height", 720))]
+        elements = data.get("elements", [])
+        containers = [element for element in elements if is_container_shape(element)]
+
+        for element in elements:
+            text = str(element.get("text", "")).strip()
+            if not text:
+                continue
+            bbox = [float(value) for value in element.get("bbox", [0, 0, 0, 0])]
+            if not contains_bbox(slide_bbox, bbox, margin=1):
+                frame_issues.append(f"S{slide_no} text '{text[:32]}' outside slide bbox {bbox}")
+
+            style = element.get("resolvedTextStyle", {})
+            insets = style.get("insets") or {}
+            font_size = float(element.get("resolvedFontSize") or style.get("fontSize") or 18)
+            bold = bool(style.get("bold"))
+            content_width = max(1.0, bbox[2] - float(insets.get("left", 0)) - float(insets.get("right", 0)))
+            content_height = max(1.0, bbox[3] - float(insets.get("top", 0)) - float(insets.get("bottom", 0)))
+            lines = text_lines(element)
+            max_line_width = max((estimate_text_width(line, font_size, bold) for line in lines), default=0)
+            estimated_height = len(lines) * font_size * 1.08
+            width_tolerance = max(12.0, content_width * 0.08)
+            height_tolerance = max(6.0, font_size * 0.28)
+
+            if max_line_width > content_width + width_tolerance:
+                overflow_issues.append(
+                    f"S{slide_no} '{text[:36]}' width {max_line_width:.0f}px > box {content_width:.0f}px"
+                )
+            if estimated_height > content_height + height_tolerance:
+                overflow_issues.append(
+                    f"S{slide_no} '{text[:36]}' height {estimated_height:.0f}px > box {content_height:.0f}px"
+                )
+
+            containing = [
+                container
+                for container in containers
+                if center_inside([float(v) for v in container.get("bbox", [0, 0, 0, 0])], bbox)
+                and bbox_area(container.get("bbox", [0, 0, 0, 0])) > bbox_area(bbox) * 1.12
+            ]
+            if containing:
+                nearest = min(containing, key=lambda item: bbox_area(item.get("bbox", [0, 0, 0, 0])))
+                container_bbox = [float(v) for v in nearest.get("bbox", [0, 0, 0, 0])]
+                if not contains_bbox(container_bbox, bbox, margin=3):
+                    container_issues.append(
+                        f"S{slide_no} '{text[:36]}' bbox {bbox} escapes container {container_bbox}"
+                    )
+
+    if frame_issues:
+        add(checks, "ppt layout QA: slide bounds", "FAIL", "; ".join(frame_issues[:8]))
+    else:
+        add(checks, "ppt layout QA: slide bounds", "PASS", f"{len(layout_files)} slides checked")
+
+    if overflow_issues:
+        add(checks, "ppt layout QA: text overflow", "FAIL", "; ".join(overflow_issues[:10]))
+    else:
+        add(checks, "ppt layout QA: text overflow", "PASS", "no estimated text overflow")
+
+    if container_issues:
+        add(checks, "ppt layout QA: container fit", "FAIL", "; ".join(container_issues[:10]))
+    else:
+        add(checks, "ppt layout QA: container fit", "PASS", "text boxes stay inside detected containers")
+
+
 def iter_source_files() -> list[Path]:
     files: list[Path] = []
     for path in ROOT.rglob("*"):
@@ -243,6 +413,7 @@ def main() -> int:
     checks: list[Check] = []
     check_required_files(checks)
     check_ppt(checks)
+    check_layout_text_fit(checks)
     check_secrets(checks)
     check_optional_commands(checks, compile_checks=args.compile)
     write_report(checks)
