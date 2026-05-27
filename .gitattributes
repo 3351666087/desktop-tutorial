@@ -1,0 +1,16 @@
+*.pdf binary
+*.pptx binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ino text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf

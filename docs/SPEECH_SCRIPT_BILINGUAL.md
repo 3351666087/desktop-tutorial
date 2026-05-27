@@ -3,6 +3,17 @@
 建议时长：8 到 10 分钟。  
 讲解策略：先证明本地安全与边缘控制，再讲 IoT 网络和 Dashboard，最后讲 AI 与数据。不要一开始就讲 AI。
 
+## 四人分工版 / Four-speaker split
+
+| 人员 | 时间 | 负责内容 |
+|---|---|---|
+| Speaker 1 | 0:00-2:00 | 开场、use case、系统架构、本地优先思想 |
+| Speaker 2 | 2:00-4:30 | UNO、传感器、执行器、Safety Alarm、节能和温控 |
+| Speaker 3 | 4:30-6:30 | ESP32、UART、MQTT、ACK、Wi-Fi、LM35 ADC |
+| Speaker 4 | 6:30-9:30 | Dashboard、手动模式、图表、Qwen、语音、数据分析和总结 |
+
+English split: Speaker 1 introduces the problem and architecture; Speaker 2 proves the local hardware control; Speaker 3 explains the IoT gateway and MQTT command loop; Speaker 4 demonstrates the dashboard, AI task timeline, analytics, and closing value.
+
 ## 0:00-0:45 开场 / Opening
 
 **中文**

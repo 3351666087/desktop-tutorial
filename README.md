@@ -61,6 +61,8 @@ NodeRED_Phase3D_Setup.md          Optional Node-RED/MQTT Explorer setup notes
 
 For teammates, use the PDF files instead of raw Markdown or self-check files:
 
+- `docs/SmartClassroom_4Person_Presentation_Plan_ZH.pdf` - exact four-person role split, demo order, and fallback plan.
+- `docs/SmartClassroom_Feature_Logic_Guide_ZH.pdf` - detailed Chinese feature logic guide for teammates.
 - `docs/SmartClassroom_Team_Guide_ZH.pdf` - Chinese project flow, features, and speaking priority.
 - `docs/SmartClassroom_Assembly_Checklist_ZH.pdf` - Chinese onsite wiring and module checklist.
 - `docs/SmartClassroom_Environment_Setup_ZH.pdf` - Chinese environment setup and run guide.
@@ -71,6 +73,26 @@ Regenerate them with:
 
 ```powershell
 python .\tools\build_team_pdfs.py
+```
+
+The teammate-ready zip is generated at `dist/SmartClassroom_Team_Delivery_Pack.zip`.
+
+## CW2 Final Submission Pack
+
+The marking-scheme-aligned final submission package is generated at:
+
+```text
+dist/SmartClassroom_CW2_Final_Submission_Pack.zip
+```
+
+It contains the cover sheet, final English project report, marking criteria response,
+GitHub/runbook evidence, demonstration PPTX/PDF, wiring checklist, feature guide,
+and self-check report.
+
+Regenerate it with:
+
+```powershell
+python .\tools\build_cw2_submission_pack.py
 ```
 
 ## Hardware Summary
@@ -240,6 +262,31 @@ smartclassroom/edge1/command_ack
 ```
 
 ## Qwen Task Planner
+
+The AI layer now runs through a persistent local backend instead of repeatedly
+spawning model scripts. The launcher starts:
+
+- `smart_ai/ai_backend_service.py`
+- faster-whisper ASR, loaded on CUDA when available
+- torch preference recommendation, using CUDA tensors when available
+- Qwen structured planner, with thinking disabled and JSON-only output
+
+The local API surface is:
+
+- `GET /health`
+- `POST /transcribe`
+- `POST /analytics/recommend`
+- `POST /qwen/plan`
+
+Before a live demo, run:
+
+```powershell
+python .\tools\check_ai_backend_runtime.py
+```
+
+Expected result: `ok: true`, `whisperDevice: cuda`, `preferenceDevice: cuda`,
+and at least two Qwen timeline tasks for the built-in test command. The API key
+is read from ignored local secrets or environment variables and is not committed.
 
 The dashboard supports text and voice commands. Qwen returns a structured plan:
 

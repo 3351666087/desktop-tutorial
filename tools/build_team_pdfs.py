@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
+import zipfile
 from pathlib import Path
 
 import markdown
@@ -10,6 +12,9 @@ import markdown
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 WORK = ROOT / "outputs" / "team_pdf_html"
+DIST = ROOT / "dist"
+TEAM_ZIP = DIST / "SmartClassroom_Team_Delivery_Pack.zip"
+PORT_PDF = DOCS / "SmartClassroom_Port_Connection_Check_ZH.pdf"
 EDGE = Path("C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe")
 PPTX = DOCS / "presentation" / "SmartClassroom_IoT104TC_Demo.pptx"
 PPT_PDF = DOCS / "presentation" / "SmartClassroom_IoT104TC_Demo.pdf"
@@ -184,8 +189,41 @@ def export_ppt_to_pdf() -> None:
             app.Quit()
 
 
+
+def write_team_zip() -> None:
+    DIST.mkdir(parents=True, exist_ok=True)
+    if PORT_PDF.exists():
+        PORT_PDF.unlink()
+    shutil.copyfile(DOCS / "SmartClassroom_Assembly_Checklist_ZH.pdf", PORT_PDF)
+    if TEAM_ZIP.exists():
+        TEAM_ZIP.unlink()
+    files = [
+        ("00_四人分工与演示顺序.pdf", DOCS / "SmartClassroom_4Person_Presentation_Plan_ZH.pdf"),
+        ("01_功能逻辑详解.pdf", DOCS / "SmartClassroom_Feature_Logic_Guide_ZH.pdf"),
+        ("02_端口接线确认.pdf", PORT_PDF),
+        ("03_演示用PPTX.pptx", DOCS / "presentation" / "SmartClassroom_IoT104TC_Demo.pptx"),
+        ("04_演示用PPT_PDF.pdf", DOCS / "presentation" / "SmartClassroom_IoT104TC_Demo.pdf"),
+        ("05_中英双语演讲稿.pdf", DOCS / "SmartClassroom_Speech_Script_Bilingual.pdf"),
+    ]
+    with zipfile.ZipFile(TEAM_ZIP, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("README_先看这个.txt", "\n".join([
+            "Smart Classroom Team Delivery Pack",
+            "",
+            "00 四人分工与演示顺序：先看这个，明确 4 个人各自讲什么、操作什么。",
+            "01 功能逻辑详解：给组员讲系统功能和每条逻辑链路。",
+            "02 端口接线确认：现场照着查 UNO / ESP32 / 模块接口。",
+            "03 演示用 PPTX：现场汇报可编辑版本。",
+            "04 演示用 PPT PDF：只读放映或发给老师版本。",
+            "05 中英双语演讲稿：4 人分工时可按段落拆分。",
+        ]))
+        for arcname, source in files:
+            archive.write(source, arcname)
+    print(TEAM_ZIP)
+
 def main() -> int:
     jobs = [
+        (DOCS / "FOUR_PERSON_PRESENTATION_PLAN_ZH.md", DOCS / "SmartClassroom_4Person_Presentation_Plan_ZH.pdf", "Smart Classroom 四人演示分工说明"),
+        (DOCS / "TEAM_FEATURE_GUIDE_ZH.md", DOCS / "SmartClassroom_Feature_Logic_Guide_ZH.pdf", "Smart Classroom 功能逻辑详解"),
         (DOCS / "TEAM_FLOWCHART_ZH.md", DOCS / "SmartClassroom_Team_Guide_ZH.pdf", "Smart Classroom 团队总览"),
         (DOCS / "ASSEMBLY_CHECKLIST.md", DOCS / "SmartClassroom_Assembly_Checklist_ZH.pdf", "Smart Classroom 现场组装清单"),
         (DOCS / "ENV_SETUP_ZH.md", DOCS / "SmartClassroom_Environment_Setup_ZH.pdf", "Smart Classroom 环境拉取说明"),
@@ -197,6 +235,8 @@ def main() -> int:
         print(pdf)
     export_ppt_to_pdf()
     print(PPT_PDF)
+    write_team_zip()
+    print(PORT_PDF)
     return 0
 
 

@@ -39,6 +39,7 @@ const QWEN_MODEL = process.env.QWEN_MODEL || "qwen3.6-plus";
 const QWEN_TASK_MAX_COUNT = 10;
 const QWEN_TASK_MAX_DELAY_SEC = 6 * 60 * 60;
 const QWEN_TASK_MIN_CONFIDENCE = 0.35;
+const AI_BACKEND_URL = process.env.SMARTCLASSROOM_AI_BACKEND_URL || "";
 const TASK_PLAN_AUTO_CLEAR_DELAY_MS = 30000;
 
 const PRESETS = [
@@ -152,6 +153,39 @@ function readSecrets() {
 
 function getDashScopeApiKey() {
   return process.env.DASHSCOPE_API_KEY || readSecrets().dashscopeApiKey || "";
+}
+
+function qwenChainState() {
+  return {
+    baseUrl: QWEN_BASE_URL,
+    model: QWEN_MODEL,
+    apiKeyPresent: Boolean(getDashScopeApiKey()),
+    thinkingDisabled: true,
+    structuredJsonOnly: true
+  };
+}
+
+async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 5000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload?.error || payload?.message || `http_${response.status}`);
+    return payload;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callAiBackend(endpoint, payload = {}, timeoutMs = 90000) {
+  if (!AI_BACKEND_URL) throw new Error("ai_backend_disabled");
+  const suffix = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return fetchJsonWithTimeout(`${AI_BACKEND_URL}${suffix}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  }, timeoutMs);
 }
 
 function appendJsonl(filePath, entry) {
@@ -621,6 +655,18 @@ aedes.on("publish", (packet, client) => {
   handleTopic(packet.topic, packet.payload);
 });
 
+async function aiHealthSnapshot() {
+  let backend = { enabled: Boolean(AI_BACKEND_URL), url: AI_BACKEND_URL || null, status: AI_BACKEND_URL ? "unknown" : "disabled" };
+  if (AI_BACKEND_URL) {
+    try {
+      backend = await fetchJsonWithTimeout(`${AI_BACKEND_URL}/health`, {}, 3500);
+    } catch (error) {
+      backend = { enabled: true, url: AI_BACKEND_URL, status: "offline", error: error.message };
+    }
+  }
+  return { ok: true, mediaPython: MEDIA_ASR_PYTHON, qwen: qwenChainState(), backend };
+}
+
 function snapshot() {
   state.ageMs = state.lastSeen ? Date.now() - state.lastSeen : null;
   if (state.ageMs !== null && state.ageMs > 7000 && state.status === "online") {
@@ -660,6 +706,10 @@ attachWebSocket(httpServer);
 
 app.get("/api/state", (_req, res) => {
   res.json(snapshot());
+});
+
+app.get("/api/health/ai", async (_req, res) => {
+  res.json(await aiHealthSnapshot());
 });
 
 app.post("/api/data/collection", (req, res) => {
@@ -752,7 +802,7 @@ app.post("/api/voice/audio", express.raw({ type: ["audio/*", "application/octet-
   state.voice = { status: "transcribing", transcript: "", intent: null, lastError: "", lastAt: Date.now() };
   broadcast();
   try {
-    const asr = await runPythonJson(ASR_SCRIPT_PATH, [audioPath], 180000);
+    const asr = await runAsr(audioPath);
     const transcript = String(asr.text || "").trim();
     if (!transcript) {
       throw new Error("empty_transcript_after_asr");
@@ -776,6 +826,13 @@ app.post("/api/voice/audio", express.raw({ type: ["audio/*", "application/octet-
 app.get("/api/settings", (_req, res) => {
   res.json({ settings, presets: PRESETS });
 });
+
+async function runAsr(audioPath) {
+  if (AI_BACKEND_URL) {
+    return callAiBackend("/transcribe", { audioPath }, 180000);
+  }
+  return runPythonJson(ASR_SCRIPT_PATH, [audioPath], 180000);
+}
 
 function runPythonJson(scriptPath, args = [], timeoutMs = 120000) {
   return new Promise((resolve, reject) => {
@@ -878,6 +935,16 @@ function buildLocalAnalytics() {
 
 async function buildAnalytics() {
   const local = buildLocalAnalytics();
+  const samples = readJsonlTail(TELEMETRY_SAMPLES_PATH, 1600);
+  const events = readJsonlTail(PREFERENCE_EVENTS_PATH, 400);
+  if (AI_BACKEND_URL) {
+    try {
+      const ml = await callAiBackend("/analytics/recommend", { samples, events }, 90000);
+      return { ...local, ml };
+    } catch (error) {
+      pushLog("ai-backend", `analytics fallback: ${error.message}`);
+    }
+  }
   try {
     const ml = await runPythonJson(PREFERENCE_SCRIPT_PATH, [TELEMETRY_SAMPLES_PATH, PREFERENCE_EVENTS_PATH], 90000);
     return { ...local, ml };
@@ -1108,6 +1175,28 @@ async function callQwenTaskPlan(transcript) {
   }
 
   const now = new Date();
+  if (AI_BACKEND_URL) {
+    try {
+      const result = await callAiBackend("/qwen/plan", {
+        apiKey,
+        baseUrl: QWEN_BASE_URL,
+        model: QWEN_MODEL,
+        transcript,
+        nowUnixMs: now.getTime(),
+        currentLocalTime: now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false }),
+        timezone: "Asia/Shanghai",
+        telemetry: buildTelemetrySample(),
+        settings
+      }, 90000);
+      if (result?.plan) {
+        return normalizeTaskPlan(result.plan, transcript);
+      }
+      pushLog("ai-backend", `qwen fallback: ${result?.error || "empty_plan"}`);
+    } catch (error) {
+      pushLog("ai-backend", `qwen fallback: ${error.message}`);
+    }
+  }
+
   const systemPrompt = [
     "You are the Smart Classroom task planner.",
     "Return one JSON object only. Do not output Markdown.",
