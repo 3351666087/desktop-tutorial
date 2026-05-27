@@ -1,12 +1,12 @@
 # Smart Classroom Delivery Self-Check
 
-- Generated: 2026-05-27 21:58:06
+- Generated: 2026-05-27 22:06:02
 - Root: `D:\desktop\新项目`
 - Summary: PASS 74 / WARN 0 / FAIL 0
 
 | Status | Check | Detail |
 | --- | --- | --- |
-| PASS | required file: README.md | 12,175 bytes |
+| PASS | required file: README.md | 12,310 bytes |
 | PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,267,528 bytes |
 | PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pdf | 790,604 bytes |
 | PASS | required file: docs/FOUR_PERSON_PRESENTATION_PLAN_ZH.md | 9,574 bytes |
@@ -36,9 +36,9 @@
 | PASS | required file: docs/lmc_submission/01_Project_Description_Report.pdf | 1,582,464 bytes |
 | PASS | required file: docs/lmc_submission/02_Demonstration_Slides.pdf | 790,604 bytes |
 | PASS | required file: docs/lmc_submission/03_GitHub_Repository_And_Runbook.pdf | 105,808 bytes |
-| PASS | required file: docs/lmc_submission/04_Hardware_Port_Connection_Check.pdf | 298,305 bytes |
-| PASS | required file: docs/lmc_submission/05_Feature_Logic_Guide_ZH.pdf | 451,359 bytes |
-| PASS | required file: dist/SmartClassroom_LMC_PDF_Submission_Pack.zip | 2,604,165 bytes |
+| PASS | required file: docs/lmc_submission/04_Hardware_Port_Connection_Check.pdf | 146,680 bytes |
+| PASS | required file: docs/lmc_submission/05_Feature_Logic_Guide.pdf | 153,071 bytes |
+| PASS | required file: dist/SmartClassroom_LMC_PDF_Submission_Pack.zip | 2,200,677 bytes |
 | PASS | required file: dist/SmartClassroom_CW2_Final_Submission_Pack.zip | 4,971,997 bytes |
 | PASS | required file: UNO_Phase3_TelemetryPatch/UNO_Phase3_TelemetryPatch.ino | 35,474 bytes |
 | PASS | required file: ESP32_3B_MQTT_Gateway/ESP32_3B_MQTT_Gateway.ino | 27,318 bytes |

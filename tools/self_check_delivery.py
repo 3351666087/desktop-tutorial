@@ -62,7 +62,7 @@ REQUIRED_FILES = [
     "docs/lmc_submission/02_Demonstration_Slides.pdf",
     "docs/lmc_submission/03_GitHub_Repository_And_Runbook.pdf",
     "docs/lmc_submission/04_Hardware_Port_Connection_Check.pdf",
-    "docs/lmc_submission/05_Feature_Logic_Guide_ZH.pdf",
+    "docs/lmc_submission/05_Feature_Logic_Guide.pdf",
     "dist/SmartClassroom_LMC_PDF_Submission_Pack.zip",
     "dist/SmartClassroom_CW2_Final_Submission_Pack.zip",
     "UNO_Phase3_TelemetryPatch/UNO_Phase3_TelemetryPatch.ino",

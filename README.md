@@ -109,10 +109,12 @@ Recommended upload order:
 2. `02_Demonstration_Slides.pdf`
 3. `03_GitHub_Repository_And_Runbook.pdf`
 4. `04_Hardware_Port_Connection_Check.pdf`
-5. `05_Feature_Logic_Guide_ZH.pdf` optional supporting document
+5. `05_Feature_Logic_Guide.pdf` optional supporting document
 
 The internal marking-criteria response PDF is intentionally excluded from the LMC set
-because the marking table is for tutors.
+because the marking table is for tutors. The LMC 04/05 supporting PDFs are
+teacher-facing English versions; the Chinese versions remain available for
+teammate onsite preparation.
 
 Regenerate the PDF-only set with:
 
