@@ -1,12 +1,12 @@
 # Smart Classroom Delivery Self-Check
 
-- Generated: 2026-05-27 21:48:14
+- Generated: 2026-05-27 21:58:06
 - Root: `D:\desktop\新项目`
-- Summary: PASS 67 / WARN 0 / FAIL 0
+- Summary: PASS 74 / WARN 0 / FAIL 0
 
 | Status | Check | Detail |
 | --- | --- | --- |
-| PASS | required file: README.md | 11,559 bytes |
+| PASS | required file: README.md | 12,175 bytes |
 | PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pptx | 2,267,528 bytes |
 | PASS | required file: docs/presentation/SmartClassroom_IoT104TC_Demo.pdf | 790,604 bytes |
 | PASS | required file: docs/FOUR_PERSON_PRESENTATION_PLAN_ZH.md | 9,574 bytes |
@@ -33,7 +33,13 @@
 | PASS | required file: docs/submission/01_Final_Project_Report.pdf | 1,582,464 bytes |
 | PASS | required file: docs/submission/02_Marking_Criteria_Response.pdf | 84,440 bytes |
 | PASS | required file: docs/submission/03_GitHub_Runbook.pdf | 105,808 bytes |
-| PASS | required file: dist/SmartClassroom_CW2_Final_Submission_Pack.zip | 4,971,807 bytes |
+| PASS | required file: docs/lmc_submission/01_Project_Description_Report.pdf | 1,582,464 bytes |
+| PASS | required file: docs/lmc_submission/02_Demonstration_Slides.pdf | 790,604 bytes |
+| PASS | required file: docs/lmc_submission/03_GitHub_Repository_And_Runbook.pdf | 105,808 bytes |
+| PASS | required file: docs/lmc_submission/04_Hardware_Port_Connection_Check.pdf | 298,305 bytes |
+| PASS | required file: docs/lmc_submission/05_Feature_Logic_Guide_ZH.pdf | 451,359 bytes |
+| PASS | required file: dist/SmartClassroom_LMC_PDF_Submission_Pack.zip | 2,604,165 bytes |
+| PASS | required file: dist/SmartClassroom_CW2_Final_Submission_Pack.zip | 4,971,997 bytes |
 | PASS | required file: UNO_Phase3_TelemetryPatch/UNO_Phase3_TelemetryPatch.ino | 35,474 bytes |
 | PASS | required file: ESP32_3B_MQTT_Gateway/ESP32_3B_MQTT_Gateway.ino | 27,318 bytes |
 | PASS | required file: SmartClassroom_WebDashboard/server.js | 60,857 bytes |
@@ -69,6 +75,7 @@
 | PASS | python syntax: tools/generate_team_flowchart.py | ok |
 | PASS | python syntax: tools/build_team_pdfs.py | ok |
 | PASS | python syntax: tools/build_cw2_submission_pack.py | ok |
+| PASS | python syntax: tools/build_lmc_submission_pdfs.py | ok |
 | PASS | python syntax: tools/check_ai_backend_runtime.py | ok |
 | PASS | python syntax: smart_ai/ai_backend_service.py | ok |
 | PASS | arduino compile: UNO_Phase3_TelemetryPatch | Sketch uses 17004 bytes (52%) of program storage space. Maximum is 32256 bytes.<br>Global variables use 1089 bytes (53%) of dynamic memory, leaving 959 bytes for local variables. Maximum is 2048 bytes. |

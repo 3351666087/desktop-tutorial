@@ -95,6 +95,31 @@ Regenerate it with:
 python .\tools\build_cw2_submission_pack.py
 ```
 
+## LMC PDF-Only Submission
+
+LMC accepts PDF uploads for this assignment, so use the cleaned PDF-only set:
+
+```text
+docs/lmc_submission/
+```
+
+Recommended upload order:
+
+1. `01_Project_Description_Report.pdf`
+2. `02_Demonstration_Slides.pdf`
+3. `03_GitHub_Repository_And_Runbook.pdf`
+4. `04_Hardware_Port_Connection_Check.pdf`
+5. `05_Feature_Logic_Guide_ZH.pdf` optional supporting document
+
+The internal marking-criteria response PDF is intentionally excluded from the LMC set
+because the marking table is for tutors.
+
+Regenerate the PDF-only set with:
+
+```powershell
+python .\tools\build_lmc_submission_pdfs.py
+```
+
 ## Hardware Summary
 
 ### Modules From the 48-Piece Kit Photo
